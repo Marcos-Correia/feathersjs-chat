@@ -1,5 +1,6 @@
 // // For more information about this file see https://dove.feathersjs.com/guides/cli/service.schemas.html
-import { resolve } from '@feathersjs/schema'
+import crypto from 'crypto'
+import { resolve, validateQuery } from '@feathersjs/schema'
 import { Type, getValidator, querySyntax } from '@feathersjs/typebox'
 import type { Static } from '@feathersjs/typebox'
 import { passwordHash } from '@feathersjs/authentication-local'
@@ -14,7 +15,8 @@ export const userSchema = Type.Object(
     id: Type.Number(),
     email: Type.String(),
     password: Type.Optional(Type.String()),
-    githubId: Type.Optional(Type.String())
+    githubId: Type.Optional(Type.String()),
+    avatar: Type.Optional(Type.String()),
   },
   { $id: 'User', additionalProperties: false }
 )
@@ -28,13 +30,20 @@ export const userExternalResolver = resolve<User, HookContext<UserService>>({
 })
 
 // Schema for creating new entries
-export const userDataSchema = Type.Pick(userSchema, ['email', 'password', 'githubId'], {
+export const userDataSchema = Type.Pick(userSchema, ['email', 'password', 'githubId', 'avatar'], {
   $id: 'UserData'
 })
 export type UserData = Static<typeof userDataSchema>
 export const userDataValidator = getValidator(userDataSchema, dataValidator)
 export const userDataResolver = resolve<User, HookContext<UserService>>({
-  password: passwordHash({ strategy: 'local' })
+  password: passwordHash({ strategy: 'local' }),
+  avatar: async (value, user) => {
+    if (value !== undefined) {
+      return value
+    }
+    const hash = crypto.createHash('md5').update(user.email.toLocaleLowerCase()).digest('hex')
+    return `https://s.gravatar.com/avatar/${hash}?s=60`
+  }
 })
 
 // Schema for updating existing entries
@@ -61,8 +70,8 @@ export type UserQuery = Static<typeof userQuerySchema>
 export const userQueryValidator = getValidator(userQuerySchema, queryValidator)
 export const userQueryResolver = resolve<UserQuery, HookContext<UserService>>({
   // If there is a user (e.g. with authentication), they are only allowed to see their own data
-  id: async (value, user, context) => {
-    if (context.params.user) {
+  id: async (value, _, context) => {
+    if (context.params.user && context.method !== 'find') {
       return context.params.user.id
     }
 
