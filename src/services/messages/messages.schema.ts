@@ -14,7 +14,7 @@ export const messageSchema = Type.Object(
     text: Type.String(),
     createdAt: Type.Number(),
     userId: Type.Number(),
-    user: Type.Ref(userSchema),
+    user: Type.Ref(userSchema)
   },
   { $id: 'Message', additionalProperties: false }
 )
@@ -22,21 +22,19 @@ export type Message = Static<typeof messageSchema>
 export const messageValidator = getValidator(messageSchema, dataValidator)
 
 /**
-* Resolves the `user` field in the message schema by fetching the user data
-* based on the `userId` field.
-*
-* @param {Object} message - The message object containing the userId.
-* @param {HookContext} context - The Feathers hook context.
-* @returns {Promise<Object|undefined>} - The user object if found, otherwise undefined.
-*/
+ * Resolves the `user` field in the message schema by fetching the user data
+ * based on the `userId` field.
+ *
+ * @param {Object} message - The message object containing the userId.
+ * @param {HookContext} context - The Feathers hook context.
+ * @returns {Promise<Object|undefined>} - The user object if found, otherwise undefined.
+ */
 export const messageResolver = resolve<Message, HookContext>({
-  user: virtual(
-    async (message, context) => {
-      if (message.userId) {
-        return context.app.service('users').get(message.userId)
-      }
+  user: virtual(async (message, context) => {
+    if (message.userId) {
+      return context.app.service('users').get(message.userId)
     }
-  )
+  })
 })
 
 export const messageExternalResolver = resolve<Message, HookContext>({})

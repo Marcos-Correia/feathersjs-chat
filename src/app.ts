@@ -11,6 +11,7 @@ import { sqlite } from './sqlite'
 import { authentication } from './authentication'
 import { services } from './services/index'
 import { channels } from './channels'
+import rateLimit from 'koa-ratelimit'
 
 const app: Application = koa(feathers())
 
@@ -18,6 +19,22 @@ const app: Application = koa(feathers())
 app.configure(configuration(configurationValidator))
 
 // Set up Koa middleware
+app.use(
+  rateLimit({
+    driver: 'memory',
+    db: new Map(),
+    duration: 120000,
+    errorMessage: 'Sometimes You Just Have to Slow Down.',
+    id: ctx => ctx.ip,
+    headers: {
+      remaining: 'Rate-Limit-Remaining',
+      reset: 'Rate-Limit-Reset',
+      total: 'Rate-Limit-Total'
+    },
+    max: 100,
+    disableHeader: false
+  })
+)
 app.use(cors())
 app.use(serveStatic(app.get('public')))
 app.use(errorHandler())

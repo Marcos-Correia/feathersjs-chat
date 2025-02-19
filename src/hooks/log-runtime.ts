@@ -3,9 +3,10 @@ import { logger } from '../logger'
 
 export const logRuntime = async (context: HookContext, next: NextFunction) => {
   const startTime = Date.now()
-  // Run everything else (other hooks and service call)
+  logger.info(`Calling ${context.method} on ${context.path}`)
+
   await next()
 
   const duration = Date.now() - startTime
-  logger.info(`Calling ${context.method} on ${context.path} took ${duration}ms`)
+  logger.info(`Completed ${context.method} on ${context.path} in ${duration}ms`)
 }
