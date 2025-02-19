@@ -117,7 +117,7 @@ const addMessage = (message) => {
   const text = escapeHTML(message.text)
 
   if (chat) {
-    chat.innerHTML += `<div class="chat chat-start py-2">
+    chat.innerHTML += `<div class="chat chat-start py-2" data-id="${message.id}">
       <div class="chat-image avatar">
         <div class="w-10 rounded-full">
           <img src="${user.avatar}" />
@@ -128,6 +128,11 @@ const addMessage = (message) => {
         <time class="text-xs opacity-50">${formatDate(message.createdAt)}</time>
       </div>
       <div class="chat-bubble">${text}</div>
+      ${user.id === client.get('user').id ? `
+        <div class="chat-actions">
+          <button class="btn btn-sm btn-edit">Edit</button>
+          <button class="btn btn-sm btn-delete">Delete</button>
+        </div>` : ''}
     </div>`
 
     // Always scroll to the bottom of our message list
@@ -177,13 +182,15 @@ const login = async (credentials) => {
   try {
     if (!credentials) {
       // Try to authenticate using an existing token
-      await client.reAuthenticate()
+      const { user } = await client.reAuthenticate()
+      client.set('user', user)
     } else {
       // Otherwise log in with the `local` strategy using the credentials we got
-      await client.authenticate({
+      const { user } = await client.authenticate({
         strategy: 'local',
         ...credentials
       })
+      client.set('user', user)
     }
 
     // If successful, show the chat page
@@ -242,8 +249,45 @@ addEventListener('#send-message', 'submit', async (ev) => {
   input.value = ''
 })
 
+// "Edit" message button click handler
+addEventListener('.btn-edit', 'click', async (ev) => {
+  const messageElement = ev.target.closest('.chat-start')
+  const messageId = messageElement.getAttribute('data-id')
+  const newText = prompt('Edit your message:', messageElement.querySelector('.chat-bubble').innerText)
+
+  if (newText) {
+    await client.service('messages').patch(messageId, { text: newText })
+    messageElement.querySelector('.chat-bubble').innerText = newText
+  }
+})
+
+// "Delete" message button click handler
+addEventListener('.btn-delete', 'click', async (ev) => {
+  const messageElement = ev.target.closest('.chat-start')
+  const messageId = messageElement.getAttribute('data-id')
+
+  await client.service('messages').remove(messageId)
+  messageElement.remove()
+})
+
 // Listen to created events and add the new message in real-time
 client.service('messages').on('created', addMessage)
+
+// Listen to patched events and update the message in real-time
+client.service('messages').on('patched', (message) => {
+  const messageElement = document.querySelector(`.chat-start[data-id="${message.id}"]`)
+  if (messageElement) {
+    messageElement.querySelector('.chat-bubble').innerText = message.text
+  }
+})
+
+// Listen to removed events and remove the message in real-time
+client.service('messages').on('removed', (message) => {
+  const messageElement = document.querySelector(`.chat-start[data-id="${message.id}"]`)
+  if (messageElement) {
+    messageElement.remove()
+  }
+})
 
 // We will also see when new users get created in real-time
 client.service('users').on('created', addUser)
