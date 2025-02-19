@@ -20,6 +20,15 @@ export const messageSchema = Type.Object(
 )
 export type Message = Static<typeof messageSchema>
 export const messageValidator = getValidator(messageSchema, dataValidator)
+
+/**
+* Resolves the `user` field in the message schema by fetching the user data
+* based on the `userId` field.
+*
+* @param {Object} message - The message object containing the userId.
+* @param {HookContext} context - The Feathers hook context.
+* @returns {Promise<Object|undefined>} - The user object if found, otherwise undefined.
+*/
 export const messageResolver = resolve<Message, HookContext>({
   user: virtual(
     async (message, context) => {
@@ -38,6 +47,14 @@ export const messageDataSchema = Type.Pick(messageSchema, ['text'], {
 })
 export type MessageData = Static<typeof messageDataSchema>
 export const messageDataValidator = getValidator(messageDataSchema, dataValidator)
+/**
+ * Resolves the `userId` and `createdAt` fields for the message data.
+ *
+ * @param {any} _value - The current value of the field.
+ * @param {any} _messages - The message object.
+ * @param {HookContext} context - The Feathers hook context.
+ * @returns {Promise<number>} - The resolved userId or createdAt value.
+ */
 export const messageDataResolver = resolve<Message, HookContext>({
   userId: async (_value, _messages, context) => {
     return context.params.user.id
@@ -65,6 +82,14 @@ export const messageQuerySchema = Type.Intersect(
 )
 export type MessageQuery = Static<typeof messageQuerySchema>
 export const messageQueryValidator = getValidator(messageQuerySchema, queryValidator)
+/**
+ * Resolves the `userId` field for the message query.
+ *
+ * @param {number} value - The current value of the userId field.
+ * @param {any} _ - The message object.
+ * @param {HookContext} context - The Feathers hook context.
+ * @returns {Promise<number>} - The resolved userId value.
+ */
 export const messageQueryResolver = resolve<MessageQuery, HookContext>({
   userId: async (value, _, context) => {
     if (context.params.user && context.method !== 'find') {

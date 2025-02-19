@@ -21,7 +21,11 @@ import { userPath, userMethods } from './users.shared'
 export * from './users.class'
 export * from './users.schema'
 
-// A configure function that registers the service and its hooks via `app.configure`
+/**
+ * Configures the user service by registering it and its hooks on the Feathers application.
+ *
+ * @param {Application} app - The Feathers application instance.
+ */
 export const user = (app: Application) => {
   // Register our service on the Feathers application
   app.use(userPath, new UserService(getOptions(app)), {

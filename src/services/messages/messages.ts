@@ -22,7 +22,11 @@ import { logRuntime } from '../../hooks/log-runtime'
 export * from './messages.class'
 export * from './messages.schema'
 
-// A configure function that registers the service and its hooks via `app.configure`
+/**
+ * Configures the message service by registering it and its hooks on the Feathers application.
+ *
+ * @param {Application} app - The Feathers application instance.
+ */
 export const message = (app: Application) => {
   // Register our service on the Feathers application
   app.use(messagePath, new MessageService(getOptions(app)), {

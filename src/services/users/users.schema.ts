@@ -35,6 +35,14 @@ export const userDataSchema = Type.Pick(userSchema, ['email', 'password', 'githu
 })
 export type UserData = Static<typeof userDataSchema>
 export const userDataValidator = getValidator(userDataSchema, dataValidator)
+/**
+ * Resolves the `password` and `avatar` fields for the user data.
+ * Hashes the password using the local strategy and generates a Gravatar URL for the avatar if not provided.
+ *
+ * @param {string | undefined} value - The current value of the avatar field.
+ * @param {User} user - The user object.
+ * @returns {Promise<string | undefined>} - The resolved avatar URL or the provided value.
+ */
 export const userDataResolver = resolve<User, HookContext<UserService>>({
   password: passwordHash({ strategy: 'local' }),
   avatar: async (value, user) => {
@@ -52,6 +60,14 @@ export const userPatchSchema = Type.Partial(userSchema, {
 })
 export type UserPatch = Static<typeof userPatchSchema>
 export const userPatchValidator = getValidator(userPatchSchema, dataValidator)
+/**
+ * Resolves the `password` field for the user patch.
+ * Hashes the password using the local strategy before saving.
+ *
+ * @param {User} user - The user object.
+ * @param {HookContext<UserService>} context - The Feathers hook context.
+ * @returns {Promise<string>} - The hashed password.
+ */
 export const userPatchResolver = resolve<User, HookContext<UserService>>({
   password: passwordHash({ strategy: 'local' })
 })
@@ -68,6 +84,15 @@ export const userQuerySchema = Type.Intersect(
 )
 export type UserQuery = Static<typeof userQuerySchema>
 export const userQueryValidator = getValidator(userQuerySchema, queryValidator)
+/**
+ * Resolves the `id` field for the user query.
+ * If there is an authenticated user, they are only allowed to see their own data.
+ *
+ * @param {number} value - The current value of the id field.
+ * @param {any} _ - The user object.
+ * @param {HookContext<UserService>} context - The Feathers hook context.
+ * @returns {Promise<number>} - The resolved id value.
+ */
 export const userQueryResolver = resolve<UserQuery, HookContext<UserService>>({
   // If there is a user (e.g. with authentication), they are only allowed to see their own data
   id: async (value, _, context) => {
