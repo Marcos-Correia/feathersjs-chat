@@ -23,7 +23,9 @@ export const messageValidator = getValidator(messageSchema, dataValidator)
 export const messageResolver = resolve<Message, HookContext>({
   user: virtual(
     async (message, context) => {
-      return context.app.service('users').get(message.userId)
+      if (message.userId) {
+        return context.app.service('users').get(message.userId)
+      }
     }
   )
 })
@@ -38,7 +40,7 @@ export type MessageData = Static<typeof messageDataSchema>
 export const messageDataValidator = getValidator(messageDataSchema, dataValidator)
 export const messageDataResolver = resolve<Message, HookContext>({
   userId: async (_value, _messages, context) => {
-    return context.params.id
+    return context.params.user.id
   },
   createdAt: async () => Date.now()
 })
