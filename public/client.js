@@ -1,4 +1,25 @@
 /* global io, feathers, moment */
+
+// Initialize i18next
+i18next
+  .use(i18nextBrowserLanguageDetector)
+  .use(i18nextHttpBackend)
+  .init({
+    fallbackLng: 'en',
+    debug: true,
+    backend: {
+      loadPath: '/locales/{{lng}}/translation.json'
+    }
+  }, (err, t) => {
+    if (err) {
+      console.error('Error initializing i18next:', err)
+    } else {
+      // Call login right away so we can show the chat window
+      // If the user can already be authenticated
+      login()
+    }
+  })
+
 // Establish a Socket.io connection
 const socket = io()
 // Initialize our Feathers client application through Socket.io
@@ -14,29 +35,28 @@ const loginTemplate = (error) => `<div class="login flex min-h-screen bg-neutral
 <div class="card w-full max-w-sm bg-base-100 px-4 py-8 shadow-xl">
   <div class="px-4"><i alt="" class="h-32 w-32 block mx-auto i-logos-feathersjs invert"></i>
     <h1 class="text-5xl font-bold text-center my-5 bg-clip-text bg-gradient-to-br">
-      Feathers Chat
+      ${i18next.t('login.title')}
     </h1>
   </div>
   <form class="card-body pt-2">
-    ${
-      error
-        ? `<div class="alert alert-error justify-start">
+    ${error
+    ? `<div class="alert alert-error justify-start">
       <i class="i-feather-alert-triangle"></i>
-      <span class="flex-grow">${error.message}</span>
+      <span class="flex-grow">${i18next.t('login.error', { message: error.message })}</span>
     </div>`
-        : ''
-    }
+    : ''
+  }
     <div class="form-control">
-      <label for="email" class="label"><span class="label-text">Email</span></label>
-      <input type="text" name="email" placeholder="enter email" class="input input-bordered">
+      <label for="email" class="label"><span class="label-text">${i18next.t('login.email')}</span></label>
+      <input type="text" name="email" placeholder="${i18next.t('login.email')}" class="input input-bordered">
     </div>
     <div class="form-control mt-0">
-      <label for="password" class="label"><span class="label-text">Password</span></label>
-      <input type="password" name="password" placeholder="enter password" class="input input-bordered">
+      <label for="password" class="label"><span class="label-text">${i18next.t('login.password')}</span></label>
+      <input type="password" name="password" placeholder="${i18next.t('login.password')}" class="input input-bordered">
     </div>
-    <div class="form-control mt-6"><button id="login" type="button" class="btn">Login</button></div>
-    <div class="form-control mt-6"><button id="signup" type="button" class="btn">Signup</button></div>
-    <div class="form-control mt-6"><a href="/oauth/github" id="github" class="btn">Login with GitHub</a></div>
+    <div class="form-control mt-6"><button id="login" type="button" class="btn">${i18next.t('login.loginButton')}</button></div>
+    <div class="form-control mt-6"><button id="signup" type="button" class="btn">${i18next.t('login.signupButton')}</button></div>
+    <div class="form-control mt-6"><a href="/oauth/github" id="github" class="btn">${i18next.t('login.githubButton')}</a></div>
   </form>
 </div>
 </div>`
@@ -52,13 +72,19 @@ const chatTemplate =
         </label>
       </div>
       <div class="navbar-center flex flex-col">
-        <p>Feathers Chat</p>
+        <p>${i18next.t('chat.title')}</p>
         <label for="drawer-right" class="text-xs cursor-pointer">
-          <span class="online-count">0</span> User(s)
+          <span class="online-count">0</span> ${i18next.t('chat.users')}
         </label>
       </div>
       <div class="navbar-end">
-        <div class="tooltip tooltip-left" data-tip="Logout">
+        <select id="language-selector" class="select select-bordered w-full max-w-xs" >
+          <option ${i18next.language==='en'&&'selected'} value="en">English</option>
+          <option ${i18next.language==='es'&&'selected'} value="es">Español</option>
+          <option ${i18next.language==='pt'||i18next.language==='pt-BR'&&'selected'} value="pt-BR">Português</option>
+          <!-- Add more languages as needed -->
+        </select>
+        <div class="tooltip tooltip-left" data-tip="${i18next.t('chat.logout')}">
         <button type="button" id="logout" class="btn btn-ghost"><i class="i-feather-log-out text-lg"></i></button>
       </div>
       </div>
@@ -66,17 +92,35 @@ const chatTemplate =
     <div id="chat" class="h-full overflow-y-auto px-3"></div>
     <div class="form-control w-full py-2 px-3">
       <form class="input-group overflow-hidden" id="send-message">
-        <input name="text" type="text" placeholder="Compose message" class="input input-bordered w-full">
-        <button type="submit" class="btn">Send</button>
+        <input name="text" type="text" placeholder="${i18next.t('chat.sendMessage')}" class="input input-bordered w-full">
+        <button type="submit" class="btn">${i18next.t('chat.sendMessage')}</button>
       </form>
     </div>
   </div>
   <div class="drawer-side"><label for="drawer-left" class="drawer-overlay"></label>
     <ul class="menu user-list compact p-2 overflow-y-auto w-60 bg-base-300 text-base-content">
-      <li class="menu-title"><span>Users</span></li>
+      <li class="menu-title"><span>${i18next.t('chat.users')}</span></li>
     </ul>
   </div>
 </div>`
+
+document.addEventListener('change', (event) => {
+  if (event.target.id === 'language-selector') {
+    const selectedLanguage = event.target.value
+    i18next.changeLanguage(selectedLanguage, (err) => {
+      if (err) {
+        console.error('Error changing language:', err)
+      } else {
+        // Re-render the current page to apply the new language
+        if (client.get('user')) {
+          showChat()
+        } else {
+          showLogin()
+        }
+      }
+    })
+  }
+})
 
 // Helper to safely escape HTML
 const escapeHTML = (str) => str.replace(/&/g, '&amp').replace(/</g, '&lt').replace(/>/g, '&gt')
@@ -130,8 +174,8 @@ const addMessage = (message) => {
       <div class="chat-bubble">${text}</div>
       ${user.id === client.get('user').id ? `
         <div class="chat-actions">
-          <button class="btn btn-sm btn-edit">Edit</button>
-          <button class="btn btn-sm btn-delete">Delete</button>
+          <button class="btn btn-sm btn-edit">${i18next.t('chat.editMessage')}</button>
+          <button class="btn btn-sm btn-delete">${i18next.t('chat.deleteMessage')}</button>
         </div>` : ''}
     </div>`
 
@@ -253,7 +297,7 @@ addEventListener('#send-message', 'submit', async (ev) => {
 addEventListener('.btn-edit', 'click', async (ev) => {
   const messageElement = ev.target.closest('.chat-start')
   const messageId = messageElement.getAttribute('data-id')
-  const newText = prompt('Edit your message:', messageElement.querySelector('.chat-bubble').innerText)
+  const newText = prompt(i18next.t('chat.editMessage'), messageElement.querySelector('.chat-bubble').innerText)
 
   if (newText) {
     await client.service('messages').patch(messageId, { text: newText })

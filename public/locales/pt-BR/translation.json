@@ -1,0 +1,19 @@
+{
+  "login": {
+    "title": "Chat de Feathers",
+    "email": "Email",
+    "password": "Senha",
+    "loginButton": "Entrar",
+    "signupButton": "Cadastrar-se",
+    "githubButton": "Entrar com GitHub",
+    "error": "Erro: {{message}}"
+  },
+  "chat": {
+    "title": "Chat de Feathers",
+    "users": "Usuário(s)",
+    "sendMessage": "Enviar",
+    "editMessage": "Editar",
+    "deleteMessage": "Excluir",
+    "logout": "Sair"
+  }
+}
