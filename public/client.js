@@ -79,9 +79,9 @@ const chatTemplate =
       </div>
       <div class="navbar-end">
         <select id="language-selector" class="select select-bordered w-full max-w-xs" >
-          <option ${i18next.language==='en'&&'selected'} value="en">English</option>
-          <option ${i18next.language==='es'&&'selected'} value="es">Español</option>
-          <option ${i18next.language==='pt'||i18next.language==='pt-BR'&&'selected'} value="pt-BR">Português</option>
+          <option ${i18next.language === 'en' && 'selected'} value="en">English</option>
+          <option ${i18next.language === 'es' && 'selected'} value="es">Español</option>
+          <option ${i18next.language === 'pt' || i18next.language === 'pt-BR' && 'selected'} value="pt-BR">Português</option>
           <!-- Add more languages as needed -->
         </select>
         <div class="tooltip tooltip-left" data-tip="${i18next.t('chat.logout')}">
@@ -189,9 +189,18 @@ const showLogin = () => {
   document.getElementById('app').innerHTML = loginTemplate()
 }
 
+let isChatShown = false
+
 // Shows the chat page
 const showChat = async () => {
+  if (isChatShown) return
+  isChatShown = true
+
   document.getElementById('app').innerHTML = chatTemplate()
+
+  // Clear the chat container
+  const chat = document.querySelector('#chat')
+  chat.innerHTML = ''
 
   // Find the latest 25 messages. They will come with the newest first
   const messages = await client.service('messages').find({
@@ -209,6 +218,8 @@ const showChat = async () => {
 
   // Add each user to the list
   users.data.forEach(addUser)
+
+  isChatShown = false
 }
 
 // Retrieve email/password object from the login/signup page
